@@ -1,0 +1,53 @@
+service: ruby-serverless-app
+
+provider:
+  name: aws
+  runtime: ruby3.3
+  region: eu-west-3
+  architecture: arm64
+  memorySize: 256
+  logRetentionInDays: 14
+  versionFunctions: false
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:PutItem
+            - dynamodb:GetItem
+          Resource: arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/users
+
+functions:
+  hello:
+    handler: handler.hello
+    events:
+      - http:
+          path: hello
+          method: get
+  createUser:
+    handler: handler.createUser
+    events:
+      - http:
+          path: users
+          method: post
+  getUser:
+    handler: handler.getUser
+    events:
+      - http:
+          path: users/{id}
+          method: get
+
+resources:
+  Resources:
+    UsersTable:
+      Type: AWS::DynamoDB::Table
+      DeletionPolicy: Delete
+      Properties:
+        TableName: users
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
